@@ -232,13 +232,25 @@
         if (data) {
             const decodedData = decodeURIComponent(data);
             const sharedEvaluations = JSON.parse(decodedData); // JSON 문자열을 객체로 변환
-
             // 공유된 수행평가 데이터를 현재 데이터에 추가
             const month = new Date().toISOString().substring(0, 7); // 현재 월을 YYYY-MM 형식으로 가져오기
             if (!evaluations[month]) {
                 evaluations[month] = [];
             }
-            evaluations[month] = evaluations[month].concat(sharedEvaluations);
+
+            // 중복 검사하여 신규 평가만 추가
+            sharedEvaluations.forEach(sharedEval => {
+                const isDuplicate = evaluations[month].some(existingEval => 
+                    existingEval.date === sharedEval.date && 
+                    existingEval.category === sharedEval.category && 
+                    existingEval.content === sharedEval.content
+                );
+
+                if (!isDuplicate) {
+                    evaluations[month].push(sharedEval);
+                }
+            });
+
             localStorage.setItem('evaluations', JSON.stringify(evaluations)); // 데이터 저장
             updateEvaluations(); // 업데이트
         }
