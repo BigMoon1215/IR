@@ -231,9 +231,11 @@
         const data = params.get('data');
         if (data) {
             const decodedData = decodeURIComponent(data);
-            const sharedEvaluations = JSON.parse(decodedData); // JSON 문자열을 객체로 변환
+            const sharedEvaluations = JSON.parse(decodedData); //
             // 공유된 수행평가 데이터를 현재 데이터에 추가
             const month = new Date().toISOString().substring(0, 7); // 현재 월을 YYYY-MM 형식으로 가져오기
+            document.getElementById('month').value = month; // 월 입력 필드 업데이트
+
             if (!evaluations[month]) {
                 evaluations[month] = [];
             }
@@ -257,7 +259,10 @@
     }
 
     // 페이지 로드 시 공유된 데이터가 있는지 확인
-    window.onload = loadSharedEvaluations;
+    window.onload = function() {
+        loadSharedEvaluations();
+        updateEvaluations(); // 초기화 시 현재 월의 수행평가를 업데이트
+    };
 </script>
 
 </body>
