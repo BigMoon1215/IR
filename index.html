@@ -75,11 +75,6 @@
         .evaluation-list h2 { 
             margin-top: 0; 
         }
-        .share-button { 
-            position: absolute; 
-            top: 20px; 
-            right: 20px; 
-        }
     </style>
 </head>
 <body>
@@ -119,8 +114,6 @@
         <h2>등록된 수행평가</h2>
         <div id="evaluations"></div>
     </div>
-
-    <button class="share-button" onclick="shareEvaluations()">공유하기</button>
 </div>
 
 <script>
@@ -207,45 +200,8 @@
         }
     }
 
-    function shareEvaluations() {
-        const month = document.getElementById('month').value;
-        const shareData = evaluations[month] ? evaluations[month] : [];
-        const jsonData = JSON.stringify(shareData, null, 2); // JSON 문자열로 변환
-        const encodedData = encodeURIComponent(jsonData); // URL 인코딩
-        const shareUrl = `${window.location.href}?data=${encodedData}`; // 현재 URL에 데이터 추가
-
-        // 링크를 클립보드에 복사
-        navigator.clipboard.writeText(shareUrl)
-            .then(() => {
-                alert(`다음 링크가 클립보드에 복사되었습니다:\n${shareUrl}`);
-            })
-            .catch(err => {
-                alert('링크 복사에 실패했습니다.');
-                console.error('Error copying text: ', err);
-            });
-    }
-
-    // URL에서 데이터 가져오기
-    function loadSharedEvaluations() {
-        const params = new URLSearchParams(window.location.search);
-        const data = params.get('data');
-        if (data) {
-            const decodedData = decodeURIComponent(data);
-            const sharedEvaluations = JSON.parse(decodedData); // JSON 문자열을 객체로 변환
-
-            // 공유된 수행평가 데이터를 현재 데이터에 추가
-            const month = new Date().toISOString().substring(0, 7); // 현재 월을 YYYY-MM 형식으로 가져오기
-            if (!evaluations[month]) {
-                evaluations[month] = [];
-            }
-            evaluations[month] = evaluations[month].concat(sharedEvaluations);
-            localStorage.setItem('evaluations', JSON.stringify(evaluations)); // 데이터 저장
-            updateEvaluations(); // 업데이트
-        }
-    }
-
-    // 페이지 로드 시 공유된 데이터가 있는지 확인
-    window.onload = loadSharedEvaluations;
+    // 페이지 로드 시 수행평가 데이터 확인
+    window.onload = updateEvaluations;
 </script>
 
 </body>
