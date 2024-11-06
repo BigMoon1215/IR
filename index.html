@@ -79,6 +79,11 @@
         .evaluation-list h2 { 
             margin-top: 0; 
         }
+        .share-button { 
+            position: absolute; 
+            top: 20px; 
+            right: 20px; 
+        }
     </style>
 </head>
 <body>
@@ -118,6 +123,8 @@
         <h2>등록된 수행평가</h2>
         <div id="evaluations"></div>
     </div>
+
+    <button class="share-button" onclick="shareEvaluations()">공유하기</button>
 </div>
 
 <script>
@@ -188,65 +195,19 @@
 
     function editEvaluation(month, index) {
         const evaluation = evaluations[month][index];
-        
-        // 수정할 내용을 입력받기 위한 요소 생성
-        const dateInput = document.createElement('input');
-        dateInput.type = 'date';
-        dateInput.value = evaluation.date;
+        const newDate = prompt('새 날짜를 입력하세요 (YYYY-MM-DD):', evaluation.date);
+        const newCategory = prompt('새 과목을 입력하세요:', evaluation.category);
+        const newContent = prompt('새 수행평가 내용을 입력하세요:', evaluation.content);
 
-        const categorySelect = document.createElement('select');
-        categorySelect.innerHTML = `
-            <option value="">과목 선택</option>
-            <option value="국어" ${evaluation.category === '국어' ? 'selected' : ''}>국어</option>
-            <option value="수학" ${evaluation.category === '수학' ? 'selected' : ''}>수학</option>
-            <option value="영어" ${evaluation.category === '영어' ? 'selected' : ''}>영어</option>
-            <option value="사회" ${evaluation.category === '사회' ? 'selected' : ''}>사회</option>
-            <option value="과학" ${evaluation.category === '과학' ? 'selected' : ''}>과학</option>
-            <option value="한국사" ${evaluation.category === '한국사' ? 'selected' : ''}>한국사</option>
-            <option value="정보" ${evaluation.category === '정보' ? 'selected' : ''}>정보</option>
-            <option value="미술" ${evaluation.category === '미술' ? 'selected' : ''}>미술</option>
-            <option value="음악" ${evaluation.category === '음악' ? 'selected' : ''}>음악</option>
-            <option value="체육" ${evaluation.category === '체육' ? 'selected' : ''}>체육</option>
-        `;
-
-        const contentInput = document.createElement('input');
-        contentInput.type = 'text
-        contentInput.type = 'text';
-        contentInput.value = evaluation.content;
-        contentInput.placeholder = '수행평가 내용';
-
-        // 수정 완료 버튼
-        const updateButton = document.createElement('button');
-        updateButton.textContent = '수정 완료';
-        updateButton.onclick = () => {
-            const newDate = dateInput.value;
-            const newCategory = categorySelect.value;
-            const newContent = contentInput.value;
-
-            if (newDate && newCategory && newContent) {
-                evaluations[month][index] = {
-                    date: newDate,
-                    category: newCategory,
-                    content: newContent
-                };
-                localStorage.setItem('evaluations', JSON.stringify(evaluations)); // 데이터 저장
-                updateEvaluations();
-            } else {
-                alert('모든 필드를 입력하세요.');
-            }
-        };
-
-        // 수정할 항목을 보여주기 위한 div 생성
-        const editDiv = document.createElement('div');
-        editDiv.className = 'input-group';
-        editDiv.appendChild(dateInput);
-        editDiv.appendChild(categorySelect);
-        editDiv.appendChild(contentInput);
-        editDiv.appendChild(updateButton);
-
-        const evaluationItem = document.querySelectorAll('.evaluation-item')[index];
-        evaluationItem.innerHTML = ''; // 기존 내용을 지우고
-        evaluationItem.appendChild(editDiv); // 새로운 수정 항목 추가
+        if (newDate && newCategory && newContent) {
+            evaluations[month][index] = {
+                date: newDate,
+                category: newCategory,
+                content: newContent
+            };
+            localStorage.setItem('evaluations', JSON.stringify(evaluations)); // 데이터 저장
+            updateEvaluations();
+        }
     }
 
     function deleteEvaluation(month, index) {
@@ -257,8 +218,61 @@
         }
     }
 
+    function shareEvaluations() {
+        const month = document.getElementById('month').value;
+        const shareData = evaluations[month] ? evaluations[month] : [];
+        const jsonData = JSON.stringify(shareData, null, 2); // JSON 문자열로 변환
+        const encodedData = encodeURIComponent(jsonData); // URL 인코딩
+        const shareUrl = `${window.location.href}?data=${encodedData}`; // 현재 URL에 데이터 추가
+
+        // 링크를 클립보드에
+        // 링크를 클립보드에 복사
+        navigator.clipboard.writeText(shareUrl)
+            .then(() => {
+                alert(`다음 링크가 클립보드에 복사되었습니다:\n${shareUrl}`);
+            })
+            .catch(err => {
+                alert('링크 복사에 실패했습니다.');
+                console.error('Error copying text: ', err);
+            });
+    }
+
+    // URL에서 데이터 가져오기
+    function loadSharedEvaluations() {
+        const params = new URLSearchParams(window.location.search);
+        const data = params.get('data');
+        if (data) {
+            const decodedData = decodeURIComponent(data);
+            const sharedEvaluations = JSON.parse(decodedData); // JSON 문자열을 객체로 변환
+
+            // 공유된 수행평가 데이터를 해당 월에 추가
+            sharedEvaluations.forEach(sharedEval => {
+                const sharedMonth = sharedEval.date.substring(0, 7); // 공유된 평가의 월 추출
+
+                if (!evaluations[sharedMonth]) {
+                    evaluations[sharedMonth] = [];
+                }
+
+                // 중복 검사하여 신규 평가만 추가
+                const isDuplicate = evaluations[sharedMonth].some(existingEval => 
+                    existingEval.date === sharedEval.date && 
+                    existingEval.category === sharedEval.category && 
+                    existingEval.content === sharedEval.content
+                );
+
+                if (!isDuplicate) {
+                    evaluations[sharedMonth].push(sharedEval);
+                }
+            });
+
+            localStorage.setItem('evaluations', JSON.stringify(evaluations)); // 데이터 저장
+            updateEvaluations(); // 업데이트
+        }
+    }
+
     // 페이지 로드 시 공유된 데이터가 있는지 확인
     window.onload = function() {
+        loadSharedEvaluations();
         updateEvaluations(); // 초기화 시 현재 월의 수행평가를 업데이트
     };
 </script>
