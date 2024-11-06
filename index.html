@@ -13,9 +13,7 @@
             display: flex; 
             justify-content: center; 
             align-items: center; 
-            flex-direction: column; /* 수직 정렬 */
             height: 100vh; 
-            overflow-y: auto; /* 세로 스크롤 가능 */
         }
         .container { 
             max-width: 600px; 
@@ -24,7 +22,7 @@
             border-radius: 8px; 
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); 
             padding: 20px; 
-            position: relative; 
+            position: relative; /* 버튼 위치를 위한 relative 설정 */
         }
         h1, h2 { 
             text-align: center; 
@@ -49,7 +47,6 @@
             justify-content: center; 
             align-items: center; 
             margin-bottom: 10px; 
-            flex-wrap: wrap; /* 요소들이 줄바꿈 가능하게 */
         }
         button { 
             background: #007bff; 
@@ -60,14 +57,13 @@
             cursor: pointer; 
             transition: background 0.3s; 
             margin-left: 5px; /* 버튼 간격 조정 */
-            flex-shrink: 0; /* 버튼 크기 고정 */
         }
         button:hover { 
             background: #0056b3; 
         }
         select, input[type="text"], input[type="date"], input[type="month"] { 
             padding: 10px; 
-            margin: 5px; 
+            margin: 0 5px; 
             border: 1px solid #ddd; 
             border-radius: 5px; 
             font-size: 14px; 
@@ -195,16 +191,9 @@
 
     function editEvaluation(month, index) {
         const evaluation = evaluations[month][index];
-        const newDate = prompt('새 날짜를 입력하세요 (YYYY-MM-DD):', evaluation.date);
-        const newCategory = prompt('새 과목을 입력하세요:', evaluation.category);
         const newContent = prompt('새 수행평가 내용을 입력하세요:', evaluation.content);
-
-        if (newDate && newCategory && newContent) {
-            evaluations[month][index] = {
-                date: newDate,
-                category: newCategory,
-                content: newContent
-            };
+        if (newContent) {
+            evaluations[month][index].content = newContent;
             localStorage.setItem('evaluations', JSON.stringify(evaluations)); // 데이터 저장
             updateEvaluations();
         }
@@ -225,7 +214,6 @@
         const encodedData = encodeURIComponent(jsonData); // URL 인코딩
         const shareUrl = `${window.location.href}?data=${encodedData}`; // 현재 URL에 데이터 추가
 
-        // 링크를 클립보드에
         // 링크를 클립보드에 복사
         navigator.clipboard.writeText(shareUrl)
             .then(() => {
@@ -245,36 +233,19 @@
             const decodedData = decodeURIComponent(data);
             const sharedEvaluations = JSON.parse(decodedData); // JSON 문자열을 객체로 변환
 
-            // 공유된 수행평가 데이터를 해당 월에 추가
-            sharedEvaluations.forEach(sharedEval => {
-                const sharedMonth = sharedEval.date.substring(0, 7); // 공유된 평가의 월 추출
-
-                if (!evaluations[sharedMonth]) {
-                    evaluations[sharedMonth] = [];
-                }
-
-                // 중복 검사하여 신규 평가만 추가
-                const isDuplicate = evaluations[sharedMonth].some(existingEval => 
-                    existingEval.date === sharedEval.date && 
-                    existingEval.category === sharedEval.category && 
-                    existingEval.content === sharedEval.content
-                );
-
-                if (!isDuplicate) {
-                    evaluations[sharedMonth].push(sharedEval);
-                }
-            });
-
+            // 공유된 수행평가 데이터를 현재 데이터에 추가
+            const month = new Date().toISOString().substring(0, 7); // 현재 월을 YYYY-MM 형식으로 가져오기
+            if (!evaluations[month]) {
+                evaluations[month] = [];
+            }
+            evaluations[month] = evaluations[month].concat(sharedEvaluations);
             localStorage.setItem('evaluations', JSON.stringify(evaluations)); // 데이터 저장
             updateEvaluations(); // 업데이트
         }
     }
 
     // 페이지 로드 시 공유된 데이터가 있는지 확인
-    window.onload = function() {
-        loadSharedEvaluations();
-        updateEvaluations(); // 초기화 시 현재 월의 수행평가를 업데이트
-    };
+    window.onload = loadSharedEvaluations;
 </script>
 
 </body>
