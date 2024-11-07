@@ -3,222 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>수행평가 일정 관리</title>
+    <title>수행평가 관리 시스템</title>
     <style>
-        body { 
-            font-family: 'Arial', sans-serif; 
-            margin: 0; 
-            padding: 20px; 
-            background-color: #f4f4f9; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            flex-direction: column; /* 수직 정렬을 위해 변경 */
-            height: auto; /* 높이를 자동으로 조정 */
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
         }
-        .container { 
-            max-width: 600px; 
-            width: 100%; 
-            background: white; 
-            border-radius: 8px; 
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); 
-            padding: 20px; 
+        #calendar {
+            display: inline-block;
+            margin: 20px 0;
+        }
+        .day {
+            width: 40px;
+            height: 40px;
+            display: inline-block;
+            border: 1px solid #ddd;
             position: relative;
         }
-        h1, h2 { 
-            text-align: center; 
-            color: #333; 
+        .dot {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            width: 10px;
+            height: 10px;
+            background-color: red;
+            border-radius: 50%;
         }
-        .date-picker, .evaluation-list { 
-            margin-bottom: 20px; 
-            text-align: center; 
-        }
-        .evaluation-item { 
-            margin-bottom: 10px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            padding: 10px; 
-            border: 1px solid #ddd; 
-            border-radius: 5px; 
-            background: #fafafa; 
-            flex-wrap: wrap; /* 요소들이 줄 바꿈이 가능하도록 설정 */
-        }
-        .input-group { 
-            display: flex; 
-            flex-direction: column; /* 세로 방향으로 쌓이도록 변경 */
-            align-items: center; 
-            margin-bottom: 10px; 
-        }
-        button { 
-            background: #007bff; 
-            color: white; 
-            border: none; 
-            border-radius: 5px; 
-            padding: 8px 12px; 
-            cursor: pointer; 
-            transition: background 0.3s; 
-            margin-top: 10px; /* 버튼 간격 조정 */
-            width: 100%; /* 버튼의 너비를 100%로 설정 */
-        }
-        button:hover { 
-            background: #0056b3; 
-        }
-        select, input[type="text"], input[type="date"], input[type="month"] { 
-            padding: 10px; 
-            margin: 0 5px; 
-            border: 1px solid #ddd; 
-            border-radius: 5px; 
-            font-size: 14px; 
-            width: 100%; /* 입력 필드의 너비를 100%로 설정 */
-            box-sizing: border-box; /* 패딩과 보더를 포함하도록 설정 */
-        }
-        input[type="month"] { 
-            flex: 1; /* 월 입력 필드의 크기 조정 */
-        }
-        .evaluation-list h2 { 
-            margin-top: 0; 
+        #assignments {
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>수행평가 일정 관리</h1>
-    
-    <div class="date-picker">
-        <label for="month">날짜 선택:</label>
-        <input type="month" id="month" value="">
-        <button onclick="updateEvaluations()">조회</button>
-    </div>
+<h1>수행평가 관리 시스템</h1>
+<div id="calendar"></div>
+<button id="prev">이전</button>
+<button id="next">다음</button>
 
-    <div>
-        <h2>수행평가 추가</h2>
-        <div class="input-group">
-            <input type="date" id="evaluationDate">
-            <select id="category">
-                <option value="">과목 선택</option>
-                <option value="국어">국어</option>
-                <option value="수학">수학</option>
-                <option value="영어">영어</option>
-                <option value="사회">사회</option>
-                <option value="과학">과학</option>
-                <option value="한국사">한국사</option>
-                <option value="정보">정보</option>
-                <option value="미술">미술</option>
-                <option value="음악">음악</option>
-                <option value="체육">체육</option>
-            </select>
-            <input type="text" id="evaluation" placeholder="수행평가 내용">
-            <button onclick="addEvaluation()">추가</button>
-        </div>
-    </div>
+<form id="assignment-form">
+    <input type="date" id="date" required>
+    <select id="subject" required>
+        <option value="국어">국어</option>
+        <option value="수학">수학</option>
+        <option value="영어">영어</option>
+        <option value="사회">사회</option>
+        <option value="과학">과학</option>
+        <option value="한국사">한국사</option>
+        <option value="정보">정보</option>
+        <option value="미술">미술</option>
+        <option value="음악">음악</option>
+        <option value="체육">체육</option>
+    </select>
+    <input type="text" id="content" placeholder="수행평가 내용" required>
+    <button type="submit">추가</button>
+</form>
 
-    <div class="evaluation-list" id="evaluationList">
-        <h2>등록된 수행평가</h2>
-        <div id="evaluations"></div>
-    </div>
-</div>
+<div id="assignments"></div>
 
 <script>
-    // 수행평가 데이터 저장소
-    const evaluations = JSON.parse(localStorage.getItem('evaluations')) || {};
+    let currentMonth = new Date();
+    const assignments = [];
 
-    function updateEvaluations() {
-        const month = document.getElementById('month').value;
-        const evalList = document.getElementById('evaluations');
-        evalList.innerHTML = '';
+    function renderCalendar() {
+        const calendar = document.getElementById('calendar');
+        calendar.innerHTML = '';
+        currentMonth.setDate(1);
+        const month = currentMonth.getMonth();
+        const year = currentMonth.getFullYear();
 
-        // 현재 선택한 년도와 달을 기반으로 데이터 확인
-        if (evaluations[month] && evaluations[month].length > 0) {
-            // 날짜 기준으로 정렬
-            evaluations[month].sort((a, b) => new Date(a.date) - new Date(b.date));
+        // 달력의 첫 번째 요일과 총 일수 계산
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-            evaluations[month].forEach((item, index) => {
-                const div = document.createElement('div');
-                div.className = 'evaluation-item';
-                div.textContent = `${item.date}: ${item.category} - ${item.content}`;
-
-                // 수정 버튼
-                const editButton = document.createElement('button');
-                editButton.textContent = '수정';
-                editButton.onclick = () => editEvaluation(month, index);
-                div.appendChild(editButton);
-
-                // 삭제 버튼
-                const deleteButton = document.createElement('button');
-                deleteButton.textContent = '삭제';
-                deleteButton.onclick = () => deleteEvaluation(month, index);
-                div.appendChild(deleteButton);
-
-                evalList.appendChild(div);
-            });
-        } else {
-            evalList.textContent = '등록된 수행평가가 없습니다.';
+        // 빈 칸 추가
+        for (let i = 0; i < firstDay; i++) {
+            calendar.innerHTML += '<div class="day"></div>';
         }
+
+        // 날짜 추가
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const dayElement = `<div class="day" data-date="${dateString}">${day}</div>`;
+            calendar.innerHTML += dayElement;
+        }
+
+        markAssignments();
+        displayAssignments();
     }
 
-    function addEvaluation() {
-        const month = document.getElementById('month').value;
-        const category = document.getElementById('category').value;
-        const evaluationInput = document.getElementById('evaluation').value;
-        const evaluationDate = document.getElementById('evaluationDate').value;
-
-        if (evaluationInput && category && evaluationDate) {
-            const newEvaluation = {
-                date: evaluationDate,
-                category: category,
-                content: evaluationInput
-            };
-
-            // 년도와 월로 데이터 저장소 초기화
-            const evaluationMonth = evaluationDate.substring(0, 7); // YYYY-MM 형식으로 월 추출
-            if (!evaluations[evaluationMonth]) {
-                evaluations[evaluationMonth] = [];
+    function markAssignments() {
+        const days = document.querySelectorAll('.day');
+        days.forEach(day => {
+            const date = day.getAttribute('data-date');
+            if (date) {
+                const hasAssignment = assignments.some(a => a.date === date);
+                if (hasAssignment) {
+                    day.innerHTML += '<div class="dot"></div>';
+                }
             }
-            evaluations[evaluationMonth].push(newEvaluation);
-            localStorage.setItem('evaluations', JSON.stringify(evaluations)); // 데이터 저장
-            alert('수행평가가 추가되었습니다!');
-            document.getElementById('evaluation').value = '';
-            updateEvaluations();
-        } else {
-            alert('수행평가 내용을 입력하고 과목을 선택하세요.');
-        }
+        });
     }
 
-    function editEvaluation(month, index) {
-        const evaluation = evaluations[month][index];
-        const newDate = prompt('새 날짜를 입력하세요 (YYYY-MM-DD):', evaluation.date);
-        const newCategory = prompt('새 과목을 입력하세요:', evaluation.category);
-        const newContent = prompt('새 수행평가 내용을 입력하세요:', evaluation.content);
-
-        if (newDate && newCategory && newContent) {
-            evaluations[month][index] = {
-                date: newDate,
-                category: newCategory,
-                content: newContent
-            };
-            localStorage.setItem('evaluations', JSON.stringify(evaluations)); // 데이터 저장
-            updateEvaluations();
-        }
+    function displayAssignments() {
+        const assignmentsDiv = document.getElementById('assignments');
+        assignmentsDiv.innerHTML = '';
+        assignments.forEach(a => {
+            assignmentsDiv.innerHTML += `<div>${a.date} ${a.subject} - ${a.content}</div>`;
+        });
     }
 
-    function deleteEvaluation(month, index) {
-        if (confirm('정말로 삭제하시겠습니까?')) {
-            evaluations[month].splice(index, 1);
-            localStorage.setItem('evaluations', JSON.stringify(evaluations)); // 데이터 저장
-            updateEvaluations();
-        }
-    }
+    document.getElementById('assignment-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const date = document.getElementById('date').value;
+        const subject = document.getElementById('subject').value;
+        const content = document.getElementById('content').value;
 
-    // 현재 월로 초기화
-    window.onload = function() {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0'); // 월을 2자리로 맞춤
-        document.getElementById('month').value = `${year}-${month}`;
-        updateEvaluations();
-    };
+        assignments.push({ date, subject, content });
+        document.getElementById('assignment-form').reset();
+        markAssignments();
+        displayAssignments();
+    });
+
+    document.getElementById('prev').addEventListener('click', () => {
+        currentMonth.setMonth(currentMonth.getMonth() - 1);
+        renderCalendar();
+    });
+
+    document.getElementById('next').addEventListener('click', () => {
+        currentMonth.setMonth(currentMonth.getMonth() + 1);
+        renderCalendar();
+    });
+
+    renderCalendar();
 </script>
 
 </body>
