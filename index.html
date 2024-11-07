@@ -88,7 +88,7 @@
     
     <div class="date-picker">
         <label for="month">날짜 선택:</label>
-        <input type="month" id="month" value="2024-10">
+        <input type="month" id="month" value="">
         <button onclick="updateEvaluations()">조회</button>
     </div>
 
@@ -188,9 +188,16 @@
 
     function editEvaluation(month, index) {
         const evaluation = evaluations[month][index];
+        const newDate = prompt('새 날짜를 입력하세요 (YYYY-MM-DD):', evaluation.date);
+        const newCategory = prompt('새 과목을 입력하세요:', evaluation.category);
         const newContent = prompt('새 수행평가 내용을 입력하세요:', evaluation.content);
-        if (newContent) {
-            evaluations[month][index].content = newContent;
+
+        if (newDate && newCategory && newContent) {
+            evaluations[month][index] = {
+                date: newDate,
+                category: newCategory,
+                content: newContent
+            };
             localStorage.setItem('evaluations', JSON.stringify(evaluations)); // 데이터 저장
             updateEvaluations();
         }
@@ -204,8 +211,14 @@
         }
     }
 
-    // 페이지 로드 시 수행평가 데이터 확인
-    window.onload = updateEvaluations;
+    // 현재 월로 초기화
+    window.onload = function() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0'); // 월을 2자리로 맞춤
+        document.getElementById('month').value = `${year}-${month}`;
+        updateEvaluations();
+    };
 </script>
 
 </body>
