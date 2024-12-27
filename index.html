@@ -13,8 +13,7 @@
             display: flex; 
             justify-content: center; 
             align-items: center; 
-            flex-direction: column; /* 수직 정렬을 위해 변경 */
-            height: auto; /* 높이를 자동으로 조정 */
+            height: 100vh; 
         }
         .container { 
             max-width: 600px; 
@@ -23,7 +22,6 @@
             border-radius: 8px; 
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); 
             padding: 20px; 
-            position: relative;
         }
         h1, h2 { 
             text-align: center; 
@@ -42,11 +40,10 @@
             border: 1px solid #ddd; 
             border-radius: 5px; 
             background: #fafafa; 
-            flex-wrap: wrap; /* 요소들이 줄 바꿈이 가능하도록 설정 */
         }
         .input-group { 
             display: flex; 
-            flex-direction: column; /* 세로 방향으로 쌓이도록 변경 */
+            justify-content: center; 
             align-items: center; 
             margin-bottom: 10px; 
         }
@@ -58,8 +55,7 @@
             padding: 8px 12px; 
             cursor: pointer; 
             transition: background 0.3s; 
-            margin-top: 10px; /* 버튼 간격 조정 */
-            width: 100%; /* 버튼의 너비를 100%로 설정 */
+            margin-left: 5px; /* 버튼 간격 조정 */
         }
         button:hover { 
             background: #0056b3; 
@@ -70,11 +66,10 @@
             border: 1px solid #ddd; 
             border-radius: 5px; 
             font-size: 14px; 
-            width: 100%; /* 입력 필드의 너비를 100%로 설정 */
-            box-sizing: border-box; /* 패딩과 보더를 포함하도록 설정 */
+            flex: 1; /* 입력 필드가 공간을 고르게 차지하도록 설정 */
         }
         input[type="month"] { 
-            flex: 1; /* 월 입력 필드의 크기 조정 */
+            flex: 0.5; /* 월 입력 필드의 크기 조정 */
         }
         .evaluation-list h2 { 
             margin-top: 0; 
@@ -88,7 +83,7 @@
     
     <div class="date-picker">
         <label for="month">날짜 선택:</label>
-        <input type="month" id="month" value="2024-10">
+        <input type="month" id="month">
         <button onclick="updateEvaluations()">조회</button>
     </div>
 
@@ -121,6 +116,15 @@
 </div>
 
 <script>
+    // 페이지 로드 시 현재 연도와 월로 기본값 설정
+    window.onload = function() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0'); // 0부터 시작하므로 +1
+        document.getElementById('month').value = `${year}-${month}`;
+        updateEvaluations(); // 페이지 로드 시 수행평가 업데이트
+    };
+
     // 수행평가 데이터 저장소
     const evaluations = JSON.parse(localStorage.getItem('evaluations')) || {};
 
@@ -188,9 +192,18 @@
 
     function editEvaluation(month, index) {
         const evaluation = evaluations[month][index];
+        
+        // 수정할 내용을 입력받기 위한 프롬프트
+        const newDate = prompt('수정할 날짜를 입력하세요 (YYYY-MM-DD):', evaluation.date);
+        const newCategory = prompt('수정할 과목을 입력하세요:', evaluation.category);
         const newContent = prompt('새 수행평가 내용을 입력하세요:', evaluation.content);
-        if (newContent) {
-            evaluations[month][index].content = newContent;
+
+        if (newDate && newCategory && newContent) {
+            evaluations[month][index] = {
+                date: newDate,
+                category: newCategory,
+                content: newContent
+            };
             localStorage.setItem('evaluations', JSON.stringify(evaluations)); // 데이터 저장
             updateEvaluations();
         }
@@ -203,9 +216,6 @@
             updateEvaluations();
         }
     }
-
-    // 페이지 로드 시 수행평가 데이터 확인
-    window.onload = updateEvaluations;
 </script>
 
 </body>
